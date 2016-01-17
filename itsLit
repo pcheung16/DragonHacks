@@ -1,0 +1,366 @@
+#include "notes.h"
+#include "Wire.h"
+#include "rgb_lcd.h"
+
+
+
+/*********************************
+* Global Variables
+*********************************/
+// Led Pins
+int out4 = 4;
+int out5 = 5;
+int out6 = 6;
+int out7 = 7;
+int out8 = 8;
+int out9 = 9;
+int out10 = 10;
+int out11 = 11;
+int out12 = 12;
+int out13 = 13;
+
+int startLed  = 4; // First LED Lights
+int endLed = 13; // Last LED Light
+int buttonDelay = 60; // Delay for button Bouncing
+int count = 4;
+
+int buttonPin = 2;
+int buttonState = 1;
+int lightShow = 1;
+
+// LED Screen stuff
+rgb_lcd lcd;
+int colorR = 255;
+int colorG = 0;
+int colorB = 0;
+
+int counter1 = 0;
+
+
+// notes in the melody:
+int melody[] = {
+  NOTE_E7, NOTE_E7, 0, NOTE_E7, 
+  0, NOTE_C7, NOTE_E7, 0,
+  NOTE_G7, 0, 0,  0,
+  NOTE_G6, 0, 0, 0, 
+
+  NOTE_C7, 0, 0, NOTE_G6, 
+  0, 0, NOTE_E6, 0, 
+  0, NOTE_A6, 0, NOTE_B6, 
+  0, NOTE_AS6, NOTE_A6, 0, 
+
+  NOTE_G6, NOTE_E7, NOTE_G7, 
+  NOTE_A7, 0, NOTE_F7, NOTE_G7, 
+  0, NOTE_E7, 0,NOTE_C7, 
+  NOTE_D7, NOTE_B6, 0, 0,
+
+  NOTE_C7, 0, 0, NOTE_G6, 
+  0, 0, NOTE_E6, 0, 
+  0, NOTE_A6, 0, NOTE_B6, 
+  0, NOTE_AS6, NOTE_A6, 0, 
+
+  NOTE_G6, NOTE_E7, NOTE_G7, 
+  NOTE_A7, 0, NOTE_F7, NOTE_G7, 
+  0, NOTE_E7, 0,NOTE_C7, 
+  NOTE_D7, NOTE_B6, 0, 0  
+  };
+
+// note durations: 4 = quarter note, 8 = eighth note, etc.:
+int noteDurations[] = {
+   12, 12, 12, 12, 
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12, 
+
+  12, 12, 12, 12,
+  12, 12, 12, 12, 
+  12, 12, 12, 12, 
+  12, 12, 12, 12, 
+
+  9, 9, 9,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  
+  9, 9, 9,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  12, 12, 12, 12,
+  
+};
+
+
+
+
+
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // initialize digital pin 13 as an output.
+  for (int pin = startLed; pin <= endLed; pin++) {
+    pinMode(pin, OUTPUT);
+  }
+  
+  // initialize the button
+  pinMode(buttonPin, INPUT);
+  Serial.begin(9600);
+
+  // set up the LCD's number of columns and rows:
+  lcd.begin(16, 2);
+    
+  lcd.setRGB(colorR, colorG, colorB);
+    
+  // Print a message to the LCD.
+  lcd.print("Peter is a F Boi");
+
+  delay(1000);
+  
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  buttonState = digitalRead(buttonPin);
+  Serial.println(buttonState);
+  Serial.print("We are now showing Light Show Number... ");
+  Serial.println(lightShow);
+
+     // iterate over the notes of the melody:
+  for (int thisNote = 0; thisNote <59; thisNote++) {
+    int ledNote = ((melody[thisNote]) % 10) + 4;
+    // to calculate the note duration, take one second
+    // divided by the note type.
+    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+    int noteDuration = 1000 / noteDurations[thisNote];
+    tone(3, melody[thisNote], noteDuration);
+    
+    digitalWrite(ledNote, HIGH);
+    Serial.println(ledNote);
+    
+    // to distinguish the notes, set a minimum time between them.
+    // the note's duration + 30% seems to work well:
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    // stop the tone playing:
+    noTone(3);
+    digitalWrite(ledNote,LOW);
+  }
+
+    // LCD STUFF //
+   lcd.setCursor(0, 1);
+    // print the number of seconds since reset:
+    lcd.print(millis()/1000);
+
+    delay(100);
+
+    // Changes LCD colors
+    if (counter1 >= 3) {
+      counter1 = -1;
+    } else if (counter1 == 0) {
+      colorR = 0;
+      colorG = 255;
+      colorB = 0;
+      delay(100);
+    } else if (counter1 == 1) {
+      colorR = 0;
+      colorG = 0;
+      colorB = 255;
+      delay(100);
+    } else {
+      colorR = 255;
+      colorG = 0;
+      colorB = 0;
+      delay(100);
+    }
+    lcd.setRGB(colorR, colorG, colorB);
+    counter1 ++;
+
+  
+
+  switch (lightShow) {
+  case 1:
+    lightOne();
+    break;
+  case 2:
+    lightTwo();
+    break;
+  case 3:
+    lightThree();
+    break;
+  case 4:
+    lightFour();
+    break;
+  case 5:
+    lightFive();
+    break;
+  default:
+    lightShow = 1;
+    lightOne();
+    break;
+  } 
+}
+
+void lightOne() {
+  int count = startLed;
+  while (count >= startLed) {
+    buttonState = digitalRead(buttonPin);
+    delay(buttonDelay);
+    if (buttonState == LOW){
+      Serial.println("Numero Uno");
+      digitalWrite(count, HIGH);
+      delay(100);             
+      digitalWrite(count, LOW);    
+      delay(100);   
+    } else {
+      lightShow++; 
+       delay(100);
+       break;
+   }
+    count++;
+    if (count >= 14) {
+      count = 4;
+    }
+  }  
+}
+
+void lightTwo() {
+  int start = 4;
+  int end = 13;
+  int looping = 4;
+  
+  buttonState = digitalRead(buttonPin);
+  delay(buttonDelay); 
+  if (buttonState == LOW) {
+    for (int i = 0; i <= looping; i++) {
+      digitalWrite(start + i, HIGH);
+      digitalWrite(end - i, HIGH);
+      delay(100);
+    }
+    for (int i = looping; i >= 0; i--) {
+      digitalWrite(start + i, LOW);
+      digitalWrite(end - i, LOW);
+      delay(100);
+    }
+  } else {
+    lightShow++;
+    delay(100);
+  } // end if
+} // end Function
+
+
+void lightThree() {
+  buttonState = digitalRead(buttonPin);
+  delay(buttonDelay);
+  if (buttonState == LOW) {
+     for (int i = startLed + 1; i <= endLed; i += 2) {
+      int even = i - 3;
+      if (even >= 4) {
+        digitalWrite (even, HIGH);
+      }
+      digitalWrite (i, HIGH);
+      delay(100);
+      if (even >= 4) {
+        digitalWrite (even, LOW);
+      }
+      digitalWrite(i, LOW);
+    } 
+      
+  } else {
+    lightShow++;
+    delay(100);
+  }
+}
+  
+void lightFour() {
+  int turn = 0;
+  count = 4;
+    while (count >= 4) {
+      buttonState = digitalRead(buttonPin);
+      delay(buttonDelay);
+    if (buttonState == LOW){
+      if(turn == 0) {
+        Serial.println("Numero Uno");
+        digitalWrite(count, HIGH);
+        delay(100); 
+        count++;    
+      } else {
+          digitalWrite(count, LOW);
+          delay(100); 
+          count--;
+      }
+     
+      if (count > 13) {
+        turn = 1;
+      } else if(count <= 0) {
+        turn = 0;
+      }
+    } else {
+      lightShow++;
+      delay(100);
+      digitalWrite(count, LOW);
+      count = 4;
+      break;
+    }
+  }
+}
+    
+    
+void lightFive() {
+  int currentOn;
+  buttonState = digitalRead(buttonPin);
+  delay(100);
+  
+  if (buttonState == LOW) {
+    currentOn = random(4,14);
+    digitalWrite(currentOn, HIGH);
+    delay(100);
+    digitalWrite(currentOn, LOW);
+    delay(100);
+  } else {
+    lightShow++;
+    delay(100);
+  }
+}
+
+void smbMusic() {
+   digitalWrite(LED_E, HIGH);
+   delay(100);
+   digitalWrite(LED_E, LOW);
+   delay(100);
+
+   digitalWrite(LED_E, HIGH);
+   delay(100);
+   digitalWrite(LED_E, LOW);
+   delay(200);
+
+   digitalWrite(LED_LOW1, HIGH);
+   delay(100);
+   digitalWrite(LED_LOW1, LOW);
+   delay(200);
+
+   digitalWrite(LED_E, HIGH);
+   delay(100);
+   digitalWrite(LED_E, LOW);
+   delay(100);
+
+   digitalWrite(LED_LOW2, HIGH);
+   delay(100);
+   digitalWrite(LED_LOW2, LOW);
+   delay(100);
+  
+   digitalWrite(LED_C, HIGH);
+   delay(100);
+   digitalWrite(LED_C, LOW);
+   delay(100);
+
+  
+   digitalWrite(LED_E, HIGH);
+   delay(100);
+   digitalWrite(LED_E, LOW);
+   delay(100);
+  
+}
+    
